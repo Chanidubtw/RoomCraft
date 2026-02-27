@@ -1,0 +1,25 @@
+# Node dependencies — never upload these, npm install recreates them
+node_modules/
+server/node_modules/
+
+# SQLite database file — contains real user data, don't upload
+server/roomcraft.db
+server/roomcraft.db-shm
+server/roomcraft.db-wal
+
+# Environment variables — contains your JWT secret, never upload
+server/.env
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
