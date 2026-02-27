@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
+const db      = require('./db');
 
 const authRoutes   = require('./routes/auth');
 const designRoutes = require('./routes/designs');
@@ -9,12 +10,7 @@ const app  = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
-  origin: [
-    'https://roomcraft.onrender.com',
-    'http://localhost:8080',
-    'http://127.0.0.1:5500',
-    'http://localhost:5500',
-  ],
+  origin: true,
   credentials: true
 }));
 
@@ -41,6 +37,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'An unexpected server error occurred.' });
 });
 
-app.listen(PORT, () => {
-  console.log('\n  🛋️  RoomCraft API running on http://localhost:' + PORT + '\n');
+// Initialize database then start server
+db.init().then(() => {
+  app.listen(PORT, () => {
+    console.log(`RoomCraft API running on port ${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
 });

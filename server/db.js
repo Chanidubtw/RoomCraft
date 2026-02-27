@@ -1,63 +1,76 @@
-const Database = require('better-sqlite3');
-const path     = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const path    = require('path');
 
-const db = new Database(path.join(__dirname, 'roomcraft.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const DB_PATH = path.join(__dirname, 'roomcraft.db');
+const db      = new sqlite3.Database(DB_PATH);
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    email        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
-    password     TEXT    NOT NULL,
-    display_name TEXT    NOT NULL,
-    role         TEXT    NOT NULL DEFAULT 'Interior Designer',
-    created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
-    last_login   TEXT
-  );
+// Helper to run queries as promises
+function run(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve({ lastInsertRowid: this.lastID, changes: this.changes });
+    });
+  });
+}
 
-  CREATE TABLE IF NOT EXISTS designs (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name       TEXT    NOT NULL DEFAULT 'Untitled Design',
-    status     TEXT    NOT NULL DEFAULT 'draft'
-                 CHECK(status IN ('draft','in_progress','finished')),
-    room       TEXT    NOT NULL DEFAULT '{}',
-    furniture  TEXT    NOT NULL DEFAULT '[]',
-    notes      TEXT    DEFAULT '',
-    created_at TEXT    NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
-  );
+function get(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
 
-  CREATE INDEX IF NOT EXISTS idx_designs_user   ON designs(user_id);
-  CREATE INDEX IF NOT EXISTS idx_designs_status ON designs(status);
-`);
+function all(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
 
-const users = {
-  create:          db.prepare(`INSERT INTO users (email,password,display_name,role) VALUES (@email,@password,@display_name,@role)`),
-  findByEmail:     db.prepare(`SELECT * FROM users WHERE email = ? COLLATE NOCASE`),
-  findById:        db.prepare(`SELECT id,email,display_name,role,created_at,last_login FROM users WHERE id = ?`),
-  updateLastLogin: db.prepare(`UPDATE users SET last_login = datetime('now') WHERE id = ?`),
-  emailExists:     db.prepare(`SELECT 1 FROM users WHERE email = ? COLLATE NOCASE`)
-};
-
-const designs = {
-  create:        db.prepare(`INSERT INTO designs (user_id,name,status,room,furniture,notes) VALUES (@user_id,@name,@status,@room,@furniture,@notes)`),
-  update:        db.prepare(`UPDATE designs SET name=@name,status=@status,room=@room,furniture=@furniture,notes=@notes,updated_at=datetime('now') WHERE id=@id AND user_id=@user_id`),
-  updateStatus:  db.prepare(`UPDATE designs SET status=@status,updated_at=datetime('now') WHERE id=@id AND user_id=@user_id`),
-  delete:        db.prepare(`DELETE FROM designs WHERE id=? AND user_id=?`),
-  findById:      db.prepare(`SELECT * FROM designs WHERE id=? AND user_id=?`),
-  findAllForUser:db.prepare(`SELECT * FROM designs WHERE user_id=? ORDER BY updated_at DESC`),
-  findByStatus:  db.prepare(`SELECT * FROM designs WHERE user_id=? AND status=? ORDER BY updated_at DESC`),
-  duplicate:     db.prepare(`INSERT INTO designs (user_id,name,status,room,furniture,notes) SELECT user_id,name||' (Copy)','draft',room,furniture,notes FROM designs WHERE id=? AND user_id=?`),
-  countByStatus: db.prepare(`SELECT status, COUNT(*) as count FROM designs WHERE user_id=? GROUP BY status`)
-};
+// Initialize tables
+async function init() {
+  await run(`PRAGMA foreign_keys = ON`);
+  await run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      email        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+      password     TEXT    NOT NULL,
+      display_name TEXT    NOT NULL,
+      role         TEXT    NOT NULL DEFAULT 'Interior Designer',
+      created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+      last_login   TEXT
+    )
+  `);
+  await run(`
+    CREATE TABLE IF NOT EXISTS designs (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name       TEXT    NOT NULL DEFAULT 'Untitled Design',
+      status     TEXT    NOT NULL DEFAULT 'draft',
+      room       TEXT    NOT NULL DEFAULT '{}',
+      furniture  TEXT    NOT NULL DEFAULT '[]',
+      notes      TEXT    DEFAULT '',
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+  await run(`CREATE INDEX IF NOT EXISTS idx_designs_user   ON designs(user_id)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_designs_status ON designs(status)`);
+  console.log('Database initialized');
+}
 
 function parseDesign(row) {
   if (!row) return null;
   return { ...row, room: JSON.parse(row.room || '{}'), furniture: JSON.parse(row.furniture || '[]') };
 }
 
-function parseDesigns(rows) { return rows.map(parseDesign); }
+function parseDesigns(rows) {
+  return rows.map(parseDesign);
+}
 
-module.exports = { db, users, designs, parseDesign, parseDesigns };
+module.exports = { run, get, all, init, parseDesign, parseDesigns };

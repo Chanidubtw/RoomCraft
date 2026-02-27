@@ -24,20 +24,20 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (password.length < 8)
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-    if (db.users.emailExists.get(email))
+
+    const existing = await db.get('SELECT 1 FROM users WHERE email = ? COLLATE NOCASE', [email]);
+    if (existing)
       return res.status(409).json({ error: 'An account with this email already exists.' });
 
     const hashed = await bcrypt.hash(password, 12);
-    const result = db.users.create.run({
-      email: email.toLowerCase().trim(),
-      password: hashed,
-      display_name: display_name.trim(),
-      role: role || 'Interior Designer'
-    });
-    const newUser = db.users.findById.get(result.lastInsertRowid);
+    const result = await db.run(
+      'INSERT INTO users (email, password, display_name, role) VALUES (?, ?, ?, ?)',
+      [email.toLowerCase().trim(), hashed, display_name.trim(), role || 'Interior Designer']
+    );
+    const newUser = await db.get('SELECT id, email, display_name, role, created_at FROM users WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json({ token: makeToken(newUser), user: newUser });
   } catch (err) {
-    console.error(err);
+    console.error('Register error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });
@@ -48,24 +48,31 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password)
       return res.status(400).json({ error: 'Email and password are required.' });
-    const user = db.users.findByEmail.get(email.trim());
+
+    const user = await db.get('SELECT * FROM users WHERE email = ? COLLATE NOCASE', [email.trim()]);
     if (!user) return res.status(401).json({ error: 'Invalid email or password.' });
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid email or password.' });
-    db.users.updateLastLogin.run(user.id);
+
+    await db.run('UPDATE users SET last_login = datetime("now") WHERE id = ?', [user.id]);
     const { password: _, ...safeUser } = user;
     res.json({ token: makeToken(safeUser), user: safeUser });
   } catch (err) {
-    console.error(err);
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error. Please try again.' });
   }
 });
 
 // GET /api/auth/me
-router.get('/me', requireAuth, (req, res) => {
-  const user = db.users.findById.get(req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found.' });
-  res.json({ user });
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const user = await db.get('SELECT id, email, display_name, role, created_at FROM users WHERE id = ?', [req.user.id]);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error.' });
+  }
 });
 
 module.exports = router;
