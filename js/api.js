@@ -1,5 +1,5 @@
 const API = (() => {
-  const BASE    = 'http://localhost:4000/api';
+  const BASE = 'https://roomcraft-api.onrender.com/api';
   const TK_KEY  = 'roomcraft_token';
   const USR_KEY = 'roomcraft_user';
 
