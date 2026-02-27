@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoomCraft — Sign In</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root {
+      --login-bg: #fafafa;
+      --login-card: #ffffff;
+      --login-line: #e5e5e5;
+      --login-text: #1a1a1a;
+      --login-muted: #6b6b6b;
+      --login-accent: #c9a961;
+      --login-accent2: #a88b4a;
+      --login-warm: #c9a961;
+      --login-dark: #1a1a1a;
+    }
+
+    .login-page {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 12% 14%, rgba(201, 169, 97, 0.22), transparent 38%),
+        radial-gradient(circle at 90% 10%, rgba(26, 26, 26, 0.08), transparent 36%),
+        linear-gradient(160deg, #fafafa 0%, #f6f6f4 60%, #f5f3ee 100%);
+      padding: 24px;
+    }
+
+    .login-container { width: min(480px, 100%); }
+
+    .login-card {
+      background: var(--login-card);
+      border-radius: 24px;
+      padding: 36px;
+      border: 1px solid var(--login-line);
+      box-shadow: 0 20px 42px rgba(0, 0, 0, 0.1);
+      color: var(--login-text);
+    }
+
+    .login-logo { text-align: center; margin-bottom: 26px; }
+    .logo-icon {
+      width: 62px;
+      height: 62px;
+      border-radius: 18px;
+      background: linear-gradient(150deg, var(--login-warm), #dfc286);
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+      font-size: 1.6rem;
+    }
+
+    .login-logo h1 { font-size: 2rem; margin-bottom: 5px; }
+    .login-logo p { color: var(--login-muted); font-size: 0.92rem; }
+
+    .auth-tabs {
+      display: flex;
+      padding: 5px;
+      border: 1px solid var(--login-line);
+      border-radius: 12px;
+      background: #f6f6f4;
+      margin-bottom: 18px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--login-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .auth-tab.active {
+      background: linear-gradient(135deg, var(--login-accent), var(--login-accent2));
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(169, 138, 74, 0.32);
+    }
+
+    .form-group label { color: var(--login-muted); font-size: 0.76rem; }
+    .form-group input, .form-group select {
+      border: 1px solid var(--login-line);
+      background: #fff;
+      color: var(--login-text);
+      border-radius: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--login-accent), var(--login-accent2));
+      border: 0;
+      box-shadow: 0 14px 24px rgba(169, 138, 74, 0.3);
+    }
+
+    .btn-primary:hover { filter: brightness(1.03); }
+
+    .back-home {
+      text-align: center;
+      margin-top: 18px;
+      color: var(--login-muted);
+      font-size: 0.88rem;
+    }
+
+    .back-home a { color: var(--login-accent); font-weight: 700; }
+
+    .btn-primary,
+    .btn-primary:focus {
+      color: #fff;
+    }
+
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .server-warning { background:#fff3cd; color:#856404; padding:10px 14px; border-radius:8px; font-size:0.8rem; border-left:3px solid #ffc107; margin-bottom:16px; display:none; }
+
+    @media (max-width: 560px) {
+      .login-card { padding: 28px 22px; }
+      .form-row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-icon">🛋️</span>
+        <h1>RoomCraft</h1>
+        <p>Designer Portal</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <div class="server-warning" id="serverWarning">
+        Cannot reach server. Run:<br>
+        <strong>cd server &amp;&amp; npm install &amp;&amp; npm start</strong>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" placeholder="designer@studio.com" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Your password" required>
+        </div>
+        <div id="loginError" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Sign In</button>
+      </form>
+
+      <form id="registerForm" class="hidden" novalidate>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="regName">Full Name</label>
+            <input type="text" id="regName" placeholder="Alex Morgan" required>
+          </div>
+          <div class="form-group">
+            <label for="regRole">Role</label>
+            <select id="regRole">
+              <option>Interior Designer</option>
+              <option>Senior Designer</option>
+              <option>Design Consultant</option>
+              <option>Space Planner</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" placeholder="designer@studio.com" required>
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <input type="password" id="regPassword" placeholder="Create a strong password" required>
+        </div>
+        <div id="registerError" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="registerBtn">Create Account</button>
+      </form>
+
+      <p class="back-home">Back to <a href="index.html">Home</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    if (API.isLoggedIn()) window.location.href = 'dashboard.html';
+
+    function switchTab(tab) {
+      document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+      document.querySelectorAll('.auth-tab').forEach((b, i) => b.classList.toggle('active', (i === 0) === (tab === 'login')));
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      if (msg.includes('server') || msg.includes('reach')) document.getElementById('serverWarning').style.display = 'block';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      document.getElementById('loginError').classList.add('hidden');
+      btn.textContent = 'Signing in...';
+      btn.disabled = true;
+      try {
+        await API.login(document.getElementById('loginEmail').value.trim(), document.getElementById('loginPassword').value);
+        window.location.href = 'dashboard.html';
+      } catch (ex) {
+        showErr('loginError', ex.message);
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('registerBtn');
+      document.getElementById('registerError').classList.add('hidden');
+      btn.textContent = 'Creating...';
+      btn.disabled = true;
+      try {
+        await API.register(
+          document.getElementById('regEmail').value.trim(),
+          document.getElementById('regPassword').value,
+          document.getElementById('regName').value.trim(),
+          document.getElementById('regRole').value
+        );
+        window.location.href = 'dashboard.html';
+      } catch (ex) {
+        showErr('registerError', ex.message);
+        btn.textContent = 'Create Account';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

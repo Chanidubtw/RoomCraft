@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoomCraft — Designer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Extra designer layout overrides */
+    html, body { height: 100%; overflow: hidden; }
+
+    /* Scrollable furniture sidebar */
+    #furnitureSidebar { overflow-y: auto; padding-bottom: 20px; }
+
+    /* Ensure canvas fills space */
+    .canvas-wrapper { position: relative; }
+
+    /* Panel label styling */
+    .info-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem; padding: 4px 0; color: var(--text-light);
+      border-bottom: 1px solid var(--border); margin-bottom: 6px;
+    }
+    .info-row span:last-child { font-weight: 600; color: var(--text); }
+
+    /* Small property row */
+    .prop-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .prop-row label { font-size: 0.75rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .prop-row .val { font-size: 0.85rem; font-weight: 600; color: var(--accent); }
+
+    /* Section divider */
+    .panel-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+    /* Keyboard shortcut hint chip */
+    .shortcut { display: inline-block; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 0.7rem; color: var(--text-light); font-family: monospace; }
+  </style>
+</head>
+<body class="designer-page">
+
+  <!-- ══ DESIGNER TOPBAR ══ -->
+  <header class="designer-topbar">
+    <div class="flex items-center gap-2">
+      <a href="dashboard.html" class="btn btn-ghost btn-sm" id="backBtn" style="color:rgba(255,255,255,0.6)">
+        ← Back
+      </a>
+      <div class="logo">
+        <span>🛋️</span> RoomCraft
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <input
+        type="text" class="design-name-input"
+        id="designNameField" placeholder="Design name…"
+        aria-label="Design name">
+      <div class="view-toggle" role="group" aria-label="View mode">
+        <button class="toggle-btn active" id="view2d" title="2D Layout View">2D Layout</button>
+        <button class="toggle-btn" id="view3d" title="3D Room Visualization">3D View</button>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-secondary" id="undoBtn" title="Undo (Ctrl+Z)" style="color:rgba(255,255,255,0.7); border-color:rgba(255,255,255,0.2)">
+        ↩ Undo
+      </button>
+      <button class="btn btn-primary" id="saveBtn" title="Save Design (Ctrl+S)">
+        💾 Save
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ MAIN DESIGNER BODY ══ -->
+  <div class="designer-body">
+
+    <!-- ── LEFT: Furniture Library ── -->
+    <aside class="furniture-sidebar" aria-label="Furniture library">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Furniture Library</div>
+        <!-- Items injected by JS -->
+        <div id="furnitureSidebar"></div>
+      </div>
+    </aside>
+
+    <!-- ── CENTRE: Canvas Area ── -->
+    <main class="canvas-area">
+      <!-- Canvas Toolbar -->
+      <div class="canvas-toolbar" role="toolbar" aria-label="Canvas tools">
+        <button class="tool-btn" id="rotateBtn" title="Rotate selected 90° (R)">
+          ⟳ Rotate
+        </button>
+        <button class="tool-btn" id="bringFrontBtn" title="Bring selected to front">
+          ↑ Front
+        </button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="deleteBtn" title="Delete selected (Del)">
+          🗑 Delete
+        </button>
+        <button class="tool-btn" id="clearBtn" title="Clear all furniture">
+          ✕ Clear All
+        </button>
+        <div class="tool-sep"></div>
+        <span style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-left:4px;">
+          <span class="shortcut">Del</span> delete &nbsp;
+          <span class="shortcut">R</span> rotate &nbsp;
+          <span class="shortcut">Ctrl+Z</span> undo
+        </span>
+      </div>
+
+      <!-- 2D Canvas -->
+      <div class="canvas-wrapper">
+        <canvas id="designCanvas" role="img" aria-label="Room design canvas">
+          Your browser does not support the canvas element.
+        </canvas>
+      </div>
+    </main>
+
+    <!-- ── RIGHT: Properties Panel ── -->
+    <aside class="properties-panel" aria-label="Design properties">
+
+      <!-- Room Specifications -->
+      <div class="panel-section">
+        <div class="panel-section-title">Room Setup</div>
+
+        <div class="form-group">
+          <label for="roomWidth">Width (m)</label>
+          <input type="number" id="roomWidth" value="5" min="1" max="20" step="0.5">
+        </div>
+        <div class="form-group">
+          <label for="roomHeight">Length (m)</label>
+          <input type="number" id="roomHeight" value="4" min="1" max="20" step="0.5">
+        </div>
+        <div class="form-group">
+          <label for="roomColor">Floor Colour</label>
+          <input type="color" id="roomColor" value="#F5E6D3">
+        </div>
+        <div class="form-group">
+          <label for="roomShape">Room Shape</label>
+          <select id="roomShape">
+            <option value="rectangle">Rectangle</option>
+            <option value="l-shape">L-Shape</option>
+            <option value="u-shape">U-Shape</option>
+            <option value="open-plan">Open Plan</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Selected Item Properties -->
+      <div class="panel-section">
+        <div class="panel-section-title">Selected Item</div>
+
+        <div id="emptySelection" class="empty-selection">
+          <div class="icon">👆</div>
+          <p>Click a furniture item on the canvas to edit its properties</p>
+        </div>
+
+        <div id="selectedPanel" class="hidden">
+          <div class="selected-title" id="selectedName">Item</div>
+
+          <div class="prop-row">
+            <label>Rotation</label>
+            <span class="val" id="furRotation">0°</span>
+          </div>
+
+          <div class="form-group">
+            <label for="furWidth">Width (m)</label>
+            <input type="number" id="furWidth" min="0.3" max="10" step="0.1">
+          </div>
+          <div class="form-group">
+            <label for="furHeight">Depth (m)</label>
+            <input type="number" id="furHeight" min="0.3" max="10" step="0.1">
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="form-group">
+            <label for="furColor">Colour</label>
+            <input type="color" id="furColor" value="#8B7355">
+          </div>
+          <div class="form-group">
+            <label for="furShading">
+              Shading — <span id="furShadingVal">0%</span>
+            </label>
+            <input type="range" id="furShading" min="0" max="1" step="0.05" value="0">
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="action-grid">
+            <button class="btn btn-secondary" onclick="rotateSelected()" title="Rotate 90°">⟳ Rotate</button>
+            <button class="btn btn-secondary" onclick="bringFront()" title="Move to front">↑ Front</button>
+            <button class="btn btn-danger" onclick="deleteSelected()" title="Delete item">🗑 Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help -->
+      <div class="panel-section">
+        <div class="panel-section-title">Help</div>
+        <div style="font-size:0.78rem; color:var(--text-light); line-height:1.6;">
+          <p>• Click library items to <strong>add</strong> furniture</p>
+          <p>• <strong>Drag</strong> items to reposition</p>
+          <p>• Drag <strong>corner handles</strong> to resize</p>
+          <p>• Press <strong>R</strong> or click Rotate to rotate 90°</p>
+          <p>• Switch to <strong>3D View</strong> for realistic preview</p>
+          <p>• <strong>Ctrl+S</strong> to save anytime</p>
+        </div>
+      </div>
+
+    </aside>
+  </div><!-- /designer-body -->
+
+
+  <!-- ══ 3D VIEW MODAL ══ -->
+  <div id="modal3d" class="hidden" role="dialog" aria-label="3D Room Visualization" aria-modal="true">
+    <div class="modal3d-header">
+      <h3>🏠 3D Room Visualization</h3>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span class="modal3d-hint">🖱 Drag to orbit · Scroll to zoom · Right-drag to pan</span>
+        <button class="btn btn-secondary btn-sm" id="close3dBtn" style="color:rgba(255,255,255,0.8); border-color:rgba(255,255,255,0.2)">
+          ✕ Back to 2D
+        </button>
+      </div>
+    </div>
+    <div id="canvas3d"></div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/designer.js"></script>
+
+</body>
+</html>

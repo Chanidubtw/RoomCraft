@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoomCraft — Furniture Visualization System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #1a1a1a;
+      --secondary: #4a4a4a;
+      --accent: #c9a961;
+      --accent-dark: #a88b4a;
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e5e5e5;
+      --text: #1a1a1a;
+      --text-light: #6b6b6b;
+      --success: #059669;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    /* Navigation */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+      height: 70px;
+    }
+
+    nav {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--secondary);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-dark);
+    }
+
+    .nav-cta {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-text {
+      color: var(--secondary);
+      background: transparent;
+    }
+
+    .btn-text:hover {
+      color: var(--primary);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .btn-dark {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-dark:hover {
+      background: var(--secondary);
+    }
+
+    /* Hero Section */
+    .hero {
+      margin-top: 70px;
+      padding: 5rem 2rem;
+      max-width: 1280px;
+      margin-left: auto;
+      margin-right: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      min-height: calc(100vh - 70px);
+    }
+
+    .hero-content h1 {
+      font-size: 3.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
+    }
+
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-light);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+      max-width: 90%;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      margin-top: 0.25rem;
+    }
+
+    /* Interface Preview */
+    .preview-window {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .window-header {
+      background: #f5f5f5;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .window-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ddd;
+    }
+
+    .window-dot:nth-child(1) { background: #ff5f57; }
+    .window-dot:nth-child(2) { background: #febc2e; }
+    .window-dot:nth-child(3) { background: #28c840; }
+
+    .window-title {
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 0.8rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .window-content {
+      height: 450px;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .room-canvas {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      background: white;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    .furniture-item {
+      position: absolute;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.3s;
+    }
+
+    .f-sofa {
+      width: 120px;
+      height: 50px;
+      background: var(--accent);
+      left: 80px;
+      top: 180px;
+    }
+
+    .f-table {
+      width: 60px;
+      height: 60px;
+      background: var(--primary);
+      left: 110px;
+      top: 90px;
+      border-radius: 50%;
+    }
+
+    .f-chair {
+      width: 40px;
+      height: 40px;
+      background: #8b7355;
+      left: 40px;
+      top: 100px;
+    }
+
+    .mode-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 6rem 2rem;
+      background: white;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-header h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-header p {
+      color: var(--text-light);
+      font-size: 1.125rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .feature-box {
+      padding: 2.5rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.3s;
+    }
+
+    .feature-box:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+      transform: translateY(-4px);
+    }
+
+    .feature-num {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-box h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+    }
+
+    .feature-box p {
+      color: var(--text-light);
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    /* Capabilities Section */
+    .capabilities {
+      padding: 6rem 2rem;
+      background: #f5f5f5;
+    }
+
+    .cap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .cap-list {
+      list-style: none;
+    }
+
+    .cap-item {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      align-items: flex-start;
+    }
+
+    .cap-icon {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .cap-content h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+    }
+
+    .cap-content p {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Designer Portal Section */
+    .portal {
+      padding: 6rem 2rem;
+      background: var(--primary);
+      color: white;
+    }
+
+    .portal-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .portal h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .portal > div > p {
+      font-size: 1.125rem;
+      color: #999;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .portal-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin: 3rem 0;
+      text-align: left;
+    }
+
+    .portal-feature {
+      padding: 1.5rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .portal-feature h4 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+
+    .portal-feature p {
+      font-size: 0.9rem;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    footer {
+      background: #0a0a0a;
+      color: #666;
+      padding: 3rem 2rem 2rem;
+      border-top: 1px solid #222;
+    }
+
+    .footer-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 3rem;
+    }
+
+    .footer-brand {
+      max-width: 300px;
+    }
+
+    .footer-brand .logo {
+      color: white;
+      margin-bottom: 1rem;
+    }
+
+    .footer-brand p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 4rem;
+    }
+
+    .link-group h4 {
+      color: white;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .link-group ul {
+      list-style: none;
+    }
+
+    .link-group li {
+      margin-bottom: 0.5rem;
+    }
+
+    .link-group a {
+      color: #666;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .link-group a:hover {
+      color: var(--accent);
+    }
+
+    .footer-bottom {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding-top: 2rem;
+      border-top: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+
+    /* Mobile Menu */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+
+    .mobile-menu-btn span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--primary);
+      margin: 5px 0;
+      transition: 0.3s;
+    }
+
+    .mobile-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 1rem;
+      right: 1rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: 0.75rem;
+      z-index: 1001;
+    }
+
+    .mobile-panel a {
+      display: block;
+      text-decoration: none;
+      color: var(--primary);
+      padding: 0.625rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .mobile-panel a:hover {
+      background: #f6f6f6;
+    }
+
+    .mobile-panel .mobile-panel-cta {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+        min-height: auto;
+        padding: 3rem 1.5rem;
+      }
+
+      .hero-content h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero-subtitle {
+        max-width: 100%;
+      }
+
+      .hero-stats {
+        justify-content: center;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cap-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      .portal-features {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .nav-cta {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      nav.mobile-open .mobile-panel {
+        display: block;
+      }
+
+      .footer-content {
+        flex-direction: column;
+        gap: 3rem;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 2rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-content h1 {
+        font-size: 2rem;
+      }
+
+      .hero-stats {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .section-header h2 {
+        font-size: 1.75rem;
+      }
+
+      .features-grid,
+      .portal-features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <nav>
+      <a href="#" class="logo">
+        <div class="logo-icon">◆</div>
+        <span>RoomCraft</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#features">System Features</a></li>
+        <li><a href="#capabilities">Capabilities</a></li>
+        <li><a href="#portal">Designer Access</a></li>
+        <li><a href="#support">Support</a></li>
+      </ul>
+
+      <div class="nav-cta">
+        <a href="#portal" class="btn btn-text">Documentation</a>
+        <a href="login.html" class="btn btn-primary" id="designerLoginBtn">Designer Login</a>
+      </div>
+
+      <button class="mobile-menu-btn" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="mobile-panel" id="mobilePanel">
+        <a href="#features">System Features</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#portal">Designer Access</a>
+        <a href="#support">Support</a>
+        <div class="mobile-panel-cta">
+          <a href="#portal">Documentation</a>
+          <a href="login.html" id="mobileDesignerLoginBtn">Designer Login</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Professional Furniture Visualization for Retail</h1>
+      <p class="hero-subtitle">
+        RoomCraft enables design consultants to create accurate 2D room layouts and 
+        realistic 3D visualizations during customer appointments. Ensure every piece 
+        fits perfectly—spatially and aesthetically—before purchase.
+      </p>
+      <div>
+        <a href="login.html" class="btn btn-dark" id="accessSystemBtn" style="padding: 0.875rem 2rem; font-size: 1rem;">
+          Access System
+        </a>
+        <a href="#capabilities" class="btn btn-text" style="margin-left: 1rem;">
+          View Capabilities →
+        </a>
+      </div>
+      
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value">2D & 3D</span>
+          <span class="stat-label">Visualization Modes</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">Real-time</span>
+          <span class="stat-label">Scaling & Placement</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">Cloud</span>
+          <span class="stat-label">Portfolio Storage</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-window">
+      <div class="window-header">
+        <div class="window-dot"></div>
+        <div class="window-dot"></div>
+        <div class="window-dot"></div>
+        <span class="window-title">Design Studio — Living Room Layout</span>
+      </div>
+      <div class="window-content">
+        <div class="room-canvas">
+          <div class="furniture-item f-sofa"></div>
+          <div class="furniture-item f-table"></div>
+          <div class="furniture-item f-chair"></div>
+        </div>
+        <div class="mode-badge">2D Layout Mode</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>System Architecture</h2>
+        <p>Comprehensive tools designed specifically for in-store furniture consultation workflows, 
+           built on established HCI principles for professional efficiency.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-box">
+          <span class="feature-num">01</span>
+          <h3>Room Specification</h3>
+          <p>Input exact room dimensions, wall configurations, and existing colour schemes. 
+             System validates measurements and maintains specification library for returning customers.</p>
+        </div>
+
+        <div class="feature-box">
+          <span class="feature-num">02</span>
+          <h3>2D Layout Design</h3>
+          <p>Intuitive drag-and-drop interface for furniture placement. Grid-based positioning 
+             ensures accurate scale representation and spatial relationship visualization.</p>
+        </div>
+
+        <div class="feature-box">
+          <span class="feature-num">03</span>
+          <h3>3D Visualization</h3>
+          <p>Convert layouts to realistic 3D renders with adjustable viewing angles. 
+             Customers experience immersive previews of how selections fit their actual space.</p>
+        </div>
+
+        <div class="feature-box">
+          <span class="feature-num">04</span>
+          <h3>Dynamic Scaling</h3>
+          <p>Intelligent proportion adjustments based on room dimensions. Prevents sizing errors 
+             with conflict alerts when furniture exceeds available space.</p>
+        </div>
+
+        <div class="feature-box">
+          <span class="feature-num">05</span>
+          <h3>Colour & Shading</h3>
+          <p>Apply finishes to individual pieces or entire schemes. Real-time shading adjustments 
+             demonstrate lighting effects and material textures accurately.</p>
+        </div>
+
+        <div class="feature-box">
+          <span class="feature-num">06</span>
+          <h3>Portfolio Management</h3>
+          <p>Secure designer accounts with saved design histories. Edit existing layouts, 
+             create variations, and maintain customer consultation records.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="capabilities" id="capabilities">
+    <div class="container">
+      <div class="cap-grid">
+        <div>
+          <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Built for Professional Use</h2>
+          <p style="color: var(--text-light); margin-bottom: 3rem; line-height: 1.7;">
+            Every interaction designed around HCI best practices: immediate feedback, 
+            error prevention, and efficient workflows that respect both designer expertise 
+            and customer time constraints.
+          </p>
+          
+          <ul class="cap-list">
+            <li class="cap-item">
+              <div class="cap-icon">⚡</div>
+              <div class="cap-content">
+                <h3>Performance Optimized</h3>
+                <p>2D and 3D rendering without noticeable delays. Smooth transitions maintain 
+                   consultation momentum and customer engagement.</p>
+              </div>
+            </li>
+            
+            <li class="cap-item">
+              <div class="cap-icon">♿</div>
+              <div class="cap-content">
+                <h3>Accessibility Compliant</h3>
+                <p>WCAG 2.1 AA standards with high contrast ratios (4.5:1 minimum), keyboard 
+                   navigation support, and screen reader compatibility.</p>
+              </div>
+            </li>
+            
+            <li class="cap-item">
+              <div class="cap-icon">↩️</div>
+              <div class="cap-content">
+                <h3>Error Recovery</h3>
+                <p>Undo functionality for recent changes, confirmation dialogs for deletions, 
+                   and auto-save prevents data loss during consultations.</p>
+              </div>
+            </li>
+            
+            <li class="cap-item">
+              <div class="cap-icon">🎯</div>
+              <div class="cap-content">
+                <h3>Intuitive Interface</h3>
+                <p>Consistent navigation patterns and clear visual hierarchies minimize 
+                   training requirements and reduce cognitive load.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        <div style="background: white; padding: 3rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <h3 style="font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 2rem; font-size: 1.1rem;">
+            System Requirements
+          </h3>
+          
+          <div style="margin-bottom: 2rem;">
+            <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Supported Browsers
+            </h4>
+            <p style="font-weight: 500;">Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</p>
+          </div>
+          
+          <div style="margin-bottom: 2rem;">
+            <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Display
+            </h4>
+            <p style="font-weight: 500;">Minimum 1280x720 / Recommended 1920x1080</p>
+          </div>
+          
+          <div style="margin-bottom: 2rem;">
+            <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Input Methods
+            </h4>
+            <p style="font-weight: 500;">Mouse, touchpad, or touchscreen (tablet compatible)</p>
+          </div>
+          
+          <div>
+            <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              Security
+            </h4>
+            <p style="font-weight: 500;">SSL encryption, role-based access control</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="portal" id="portal">
+    <div class="container">
+      <div class="portal-content">
+        <h2>Designer Portal</h2>
+        <p>
+          Secure access for authorized retail design staff. Manage customer portfolios, 
+          access historical designs, and utilize the full visualization toolkit for 
+          in-store consultations.
+        </p>
+        
+        <div class="portal-features">
+          <div class="portal-feature">
+            <h4>Authentication</h4>
+            <p>Role-based login credentials provided by system administrator</p>
+          </div>
+          <div class="portal-feature">
+            <h4>Portfolio Access</h4>
+            <p>View, edit, and manage saved customer designs and room specifications</p>
+          </div>
+          <div class="portal-feature">
+            <h4>System Status</h4>
+            <p>Real-time monitoring and maintenance notifications</p>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+          <a href="#" class="btn btn-primary" style="padding: 0.875rem 2rem;">System Login</a>
+          <a href="#" class="btn" style="background: rgba(255,255,255,0.1); color: white; padding: 0.875rem 2rem;">Request Account</a>
+        </div>
+        
+        <p style="margin-top: 2rem; font-size: 0.875rem; color: #666;">
+          Authorized retail personnel only. Contact your system administrator for access credentials.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="#" class="logo">
+          <div class="logo-icon">◆</div>
+          <span>RoomCraft</span>
+        </a>
+        <p>
+          Professional furniture visualization system for retail environments. 
+          Supporting accurate spatial planning and customer decision-making.
+        </p>
+      </div>
+      
+      <div class="footer-links">
+        <div class="link-group">
+          <h4>System</h4>
+          <ul>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#capabilities">Capabilities</a></li>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Changelog</a></li>
+          </ul>
+        </div>
+        
+        <div class="link-group">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Training Materials</a></li>
+            <li><a href="#">System Status</a></li>
+            <li><a href="#">Contact IT</a></li>
+          </ul>
+        </div>
+        
+        <div class="link-group">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Use</a></li>
+            <li><a href="#">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <span>© 2024 Furniture Retail Solutions. RoomCraft System Version 2.4.1</span>
+      <span>Enterprise License</span>
+    </div>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    (function () {
+      const nav = document.querySelector('nav');
+      const menuBtn = document.querySelector('.mobile-menu-btn');
+      const mobilePanel = document.getElementById('mobilePanel');
+      const designerLoginBtn = document.getElementById('designerLoginBtn');
+      const mobileDesignerLoginBtn = document.getElementById('mobileDesignerLoginBtn');
+      const accessSystemBtn = document.getElementById('accessSystemBtn');
+
+      if (designerLoginBtn) designerLoginBtn.href = 'login.html';
+      if (mobileDesignerLoginBtn) mobileDesignerLoginBtn.href = 'login.html';
+      if (accessSystemBtn) accessSystemBtn.href = 'login.html';
+
+      if (window.API && API.isLoggedIn() && designerLoginBtn) {
+        designerLoginBtn.textContent = 'Designer Dashboard';
+        designerLoginBtn.href = 'dashboard.html';
+      }
+
+      if (window.API && API.isLoggedIn() && mobileDesignerLoginBtn) {
+        mobileDesignerLoginBtn.textContent = 'Designer Dashboard';
+        mobileDesignerLoginBtn.href = 'dashboard.html';
+      }
+
+      if (menuBtn && nav) {
+        menuBtn.setAttribute('aria-expanded', 'false');
+        menuBtn.addEventListener('click', () => {
+          const open = nav.classList.toggle('mobile-open');
+          menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+
+      if (mobilePanel && nav && menuBtn) {
+        mobilePanel.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            nav.classList.remove('mobile-open');
+            menuBtn.setAttribute('aria-expanded', 'false');
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
