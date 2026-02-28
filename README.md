@@ -14,12 +14,6 @@ RoomCraft is a web-based interior layout platform with 2D planning, 3D visualiza
 - OBJ/MTL furniture model support with fallback procedural models
 - Lazy loading for Three.js and 3D loaders (loaded only when entering 3D view)
 
-## App Flow
-1. `index.html` - Home
-2. `login.html` - Auth
-3. `dashboard.html` - Project dashboard
-4. `designer.html?id=<designId>` - Editor
-
 ## Tech Stack
 - Frontend: HTML, CSS, Vanilla JavaScript
 - Backend: Node.js + Express
