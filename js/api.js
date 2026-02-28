@@ -26,7 +26,7 @@ const API = (() => {
     try {
       res = await fetch(BASE + path, opts);
     } catch (e) {
-      throw new Error('Cannot reach server. Make sure it is running on port 4000.');
+      throw new Error('Cannot reach server. Please try again later.');
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
