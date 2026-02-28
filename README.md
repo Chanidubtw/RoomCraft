@@ -1,112 +1,121 @@
 # RoomCraft
 
-A web-based furniture design platform for creating, editing, and managing room layouts with a modern designer workflow.
+RoomCraft is a web-based interior layout platform with 2D planning, 3D visualization, and project management.
 
-## Overview
-RoomCraft provides:
-- Secure designer authentication
-- Project-based room design management
-- Design status workflow (`draft`, `in_progress`, `finished`)
-- Dashboard analytics + recent project activity
-- 2D/3D design editing interface
+## Highlights
+- Public landing page with responsive modern UI
+- Login/register flow with JWT auth
+- Designer dashboard with status counters:
+  - `draft`
+  - `in_progress` (shown as ongoing)
+  - `finished`
+- Recent projects + recent activity tracking
+- 2D editor + 3D room viewer
+- OBJ/MTL furniture model support with fallback procedural models
+- Lazy loading for Three.js and 3D loaders (loaded only when entering 3D view)
 
-The project is split into:
-- **Frontend**: static HTML/CSS/JS pages
-- **Backend**: Node.js + Express REST API
-- **Database**: SQLite (`server/roomcraft.db`)
+## App Flow
+1. `index.html` - Home
+2. `login.html` - Auth
+3. `dashboard.html` - Project dashboard
+4. `designer.html?id=<designId>` - Editor
+
+## Tech Stack
+- Frontend: HTML, CSS, Vanilla JavaScript
+- Backend: Node.js + Express
+- Database: SQLite (`server/roomcraft.db`)
+- Auth: JWT + bcryptjs
+- Deployment: Docker / Cloud Run
 
 ## Project Structure
-
 ```text
 RoomCraft/
-  index.html              # Home page
-  login.html              # Login/Register page
-  dashboard.html          # Designer dashboard
-  designer.html           # Design editor
-  js/
-    api.js                # Frontend API client
-    dashboard.js          # Dashboard logic
-    designer.js           # Designer/editor logic
+  index.html
+  login.html
+  dashboard.html
+  designer.html
+  nginx.conf
+  Dockerfile
   css/
-    style.css             # Shared styles
-  nginx.conf              # Nginx config for static frontend container
-  Dockerfile              # Frontend Docker image (Nginx)
+    style.css
+  js/
+    api.js
+    dashboard.js
+    designer.js
+    designer/
+      catalog.js           # Furniture definitions + groups/subcategories
+      library-ui.js        # Sidebar rendering (families/sub-items)
+      model-registry.js    # Model mapping + per-item transforms/tint
+      three-glb.js         # GLTF/OBJ loading + fit/orientation + material handling
+      three-procedural.js  # Procedural 3D fallback shapes
+  assets/
+    models/
+      beds/
+      sofa/
+      chair/
+      coffee_table/
+      wardrobe/
   server/
-    server.js             # Express app entry point
-    db.js                 # SQLite init + helpers
-    middleware/auth.js    # JWT auth middleware
+    server.js
+    db.js
+    middleware/
+      auth.js
     routes/
-      auth.js             # Auth endpoints
-      designs.js          # Design CRUD endpoints
-    Dockerfile            # Backend Docker image
+      auth.js
+      designs.js
+    Dockerfile
     package.json
 ```
 
-## Tech Stack
-- **Frontend**: HTML, CSS, Vanilla JavaScript
-- **Backend**: Node.js, Express
-- **Auth**: JWT + bcryptjs
-- **DB**: sqlite3
-- **Containerization**: Docker (frontend + backend)
+## Local Setup
 
-## Current Flow
-1. `index.html` (Home)
-2. `login.html` (Sign in / Register)
-3. `dashboard.html` (Projects + stats + recent activity)
-4. `designer.html?id=<designId>` (Editor)
-
-## Local Development
-
-### 1) Backend
-
+### 1) Run backend API
 ```bash
 cd server
 npm install
 npm run dev
 ```
+API default: `http://localhost:8080`
 
-Backend runs on:
-- `http://localhost:8080`
-
-### 2) Frontend
-Serve the project root with any static server, for example:
-
+### 2) Run frontend
+From project root:
 ```bash
-# from RoomCraft/
 python3 -m http.server 5500
 ```
+Open: `http://127.0.0.1:5500`
 
-Then open:
-- `http://127.0.0.1:5500`
-
-## Environment Variables (Backend)
+## Backend Environment
 Create `server/.env`:
-
 ```env
-JWT_SECRET=your-super-secret-key
+JWT_SECRET=replace-with-a-strong-secret
 JWT_EXPIRES_IN=7d
 PORT=8080
 ```
 
-## API Base URL (Frontend)
-Configured in [`js/api.js`](js/api.js):
+## Frontend API Behavior
+Defined in `js/api.js`:
+- Local hosts (`localhost`, `127.0.0.1`) try:
+  - `http://localhost:4000/api`
+  - `http://localhost:8080/api`
+- Production uses:
+  - `https://roomcraftdb-434523840513.europe-west1.run.app/api`
 
-```js
-const BASE = 'https://roomcraftdb-434523840513.europe-west1.run.app/api';
-```
+If the server is unreachable, the client shows the real network error.
 
-For local backend testing, switch to:
+## 3D Model Library Notes
+- Supported model formats:
+  - `.obj`
+  - `.mtl` (optional)
+  - `.glb`/`.gltf` (supported by loader pipeline)
+- Per-model controls are configured in `js/designer/model-registry.js`:
+  - `fit`
+  - `scale`
+  - `rotateX / rotateY / rotateZ`
+  - `yOffset`
+  - `tintColor`
+- Paths with spaces are handled safely.
 
-```js
-const BASE = 'http://localhost:8080/api';
-```
-
-## Authentication
-- On login/register, JWT token + user session are stored in `localStorage`.
-- Protected requests send `Authorization: Bearer <token>`.
-- Expired/invalid sessions redirect to `login.html`.
-
-## Core API Endpoints
+## API Endpoints
 
 ### Auth
 - `POST /api/auth/register`
@@ -125,38 +134,34 @@ const BASE = 'http://localhost:8080/api';
 - `DELETE /api/designs/:id`
 
 ## CORS
-Current backend CORS in [`server/server.js`](server/server.js):
+Configured in `server/server.js` for:
 - `https://roomcraft-434523840513.europe-west1.run.app`
 - `http://localhost:8080`
 - `http://127.0.0.1:5500`
+- `http://localhost:5500`
 
 ## Docker
 
-### Frontend Container
-Uses root [`Dockerfile`](Dockerfile) + [`nginx.conf`](nginx.conf):
-
+### Frontend
 ```bash
 docker build -t roomcraft-frontend .
 docker run -p 8080:8080 roomcraft-frontend
 ```
 
-### Backend Container
-Uses [`server/Dockerfile`](server/Dockerfile):
-
+### Backend
 ```bash
 cd server
 docker build -t roomcraft-backend .
 docker run -p 8080:8080 --env-file .env roomcraft-backend
 ```
 
-## Deployment Notes
-- Frontend and backend can be deployed separately (e.g., Cloud Run services).
-- Ensure frontend `BASE` in `js/api.js` points to deployed backend URL.
-- Ensure backend CORS allows the deployed frontend origin.
-
+## Deployment Notes (Cloud Run)
+- Deploy frontend and backend as separate services.
+- Ensure frontend API base points to backend Cloud Run URL.
+- Ensure backend CORS includes frontend Cloud Run URL.
+- Include all `assets/models/**` files in your repo/image; missing model files will fall back to procedural furniture.
 
 ## Security Notes
 - Passwords are hashed with bcrypt.
-- JWT secret must be strong and never committed.
-- Use HTTPS in production for frontend/backend endpoints.
-
+- Never commit real JWT secrets.
+- Use HTTPS in production.
