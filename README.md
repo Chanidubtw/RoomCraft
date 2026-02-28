@@ -17,7 +17,7 @@ RoomCraft is a web-based interior layout platform with 2D planning, 3D visualiza
 ## Tech Stack
 - Frontend: HTML, CSS, Vanilla JavaScript
 - Backend: Node.js + Express
-- Database: SQLite (`server/roomcraft.db`)
+- Database: SQLite
 - Auth: JWT + bcryptjs
 - Deployment: Docker / Cloud Run
 
