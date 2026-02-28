@@ -1,5 +1,5 @@
 const API = (() => {
-  const BASE = 'https://roomcraftdb-434523840513.europe-west1.run.app';
+  const BASE = 'https://roomcraftdb-434523840513.europe-west1.run.app/api';
   const TK_KEY  = 'roomcraft_token';
   const USR_KEY = 'roomcraft_user';
 
