@@ -299,6 +299,59 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
 .furniture-item .fi-label { font-weight: 500; }
 .furniture-item .fi-size { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
 
+.furniture-family {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.78);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.furniture-family:hover {
+  border-color: rgba(201,151,90,0.35);
+  background: rgba(201,151,90,0.14);
+  color: var(--accent);
+}
+.furniture-family .fam-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.furniture-family .fam-chevron {
+  transition: transform 0.2s ease;
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+.furniture-family.open .fam-chevron {
+  transform: rotate(180deg);
+}
+
+.furniture-sublist {
+  display: none;
+  padding: 3px 0 6px 10px;
+  margin-bottom: 4px;
+  border-left: 1px dashed rgba(255,255,255,0.16);
+}
+.furniture-sublist.open {
+  display: block;
+}
+.furniture-item.is-sub-item {
+  padding: 8px 10px;
+  font-size: 0.79rem;
+  margin-bottom: 2px;
+}
+.furniture-item.is-sub-item .fi-icon {
+  font-size: 1.15rem;
+}
+
 /* Canvas Area */
 .canvas-area {
   flex: 1; display: flex; flex-direction: column;

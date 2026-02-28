@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RoomCraft — Furniture Visualization System</title>
+  <title>RoomCraft — 2D + 3D Interior Designer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
@@ -32,7 +32,9 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(1200px 500px at 80% -10%, rgba(201,169,97,0.14), transparent 60%),
+        linear-gradient(180deg, #fcfbf8 0%, var(--bg) 45%);
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -53,6 +55,7 @@
       background: rgba(255,255,255,0.95);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 6px 24px rgba(26,26,26,0.06);
       z-index: 1000;
       height: 70px;
     }
@@ -115,7 +118,7 @@
 
     .btn {
       padding: 0.625rem 1.25rem;
-      border-radius: 6px;
+      border-radius: 999px;
       font-weight: 600;
       font-size: 0.9rem;
       text-decoration: none;
@@ -159,7 +162,7 @@
     /* Hero Section */
     .hero {
       margin-top: 70px;
-      padding: 5rem 2rem;
+      padding: 5rem 2rem 4rem;
       max-width: 1280px;
       margin-left: auto;
       margin-right: auto;
@@ -174,6 +177,7 @@
       font-size: 3.5rem;
       margin-bottom: 1.5rem;
       color: var(--primary);
+      letter-spacing: -0.02em;
     }
 
     .hero-subtitle {
@@ -212,8 +216,8 @@
     /* Interface Preview */
     .preview-window {
       background: white;
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1px solid #eadfc5;
+      border-radius: 18px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
     }
@@ -346,7 +350,8 @@
     .feature-box {
       padding: 2.5rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fff 0%, #fffcf5 100%);
       transition: all 0.3s;
     }
 
@@ -380,7 +385,7 @@
     /* Capabilities Section */
     .capabilities {
       padding: 6rem 2rem;
-      background: #f5f5f5;
+      background: #f7f7f4;
     }
 
     .cap-grid {
@@ -429,7 +434,9 @@
     /* Designer Portal Section */
     .portal {
       padding: 6rem 2rem;
-      background: var(--primary);
+      background:
+        radial-gradient(1000px 400px at 15% -20%, rgba(201,169,97,0.2), transparent 60%),
+        linear-gradient(145deg, #151515 0%, #222 100%);
       color: white;
     }
 
@@ -699,12 +706,12 @@
       <ul class="nav-links">
         <li><a href="#features">System Features</a></li>
         <li><a href="#capabilities">Capabilities</a></li>
-        <li><a href="#portal">Designer Access</a></li>
+        <li><a href="#portal">Get Started</a></li>
         <li><a href="#support">Support</a></li>
       </ul>
 
       <div class="nav-cta">
-        <a href="#portal" class="btn btn-text">Documentation</a>
+        <a href="#features" class="btn btn-text">Explore</a>
         <a href="login.html" class="btn btn-primary" id="designerLoginBtn">Designer Login</a>
       </div>
 
@@ -717,10 +724,10 @@
       <div class="mobile-panel" id="mobilePanel">
         <a href="#features">System Features</a>
         <a href="#capabilities">Capabilities</a>
-        <a href="#portal">Designer Access</a>
+        <a href="#portal">Get Started</a>
         <a href="#support">Support</a>
         <div class="mobile-panel-cta">
-          <a href="#portal">Documentation</a>
+          <a href="#features">Explore</a>
           <a href="login.html" id="mobileDesignerLoginBtn">Designer Login</a>
         </div>
       </div>
@@ -729,15 +736,14 @@
 
   <section class="hero">
     <div class="hero-content">
-      <h1>Professional Furniture Visualization for Retail</h1>
+      <h1>Design Beautiful Spaces in 2D and 3D</h1>
       <p class="hero-subtitle">
-        RoomCraft enables design consultants to create accurate 2D room layouts and 
-        realistic 3D visualizations during customer appointments. Ensure every piece 
-        fits perfectly—spatially and aesthetically—before purchase.
+        RoomCraft helps anyone plan rooms with precision, test furniture layouts, and
+        preview ideas in immersive 3D before making decisions.
       </p>
       <div>
         <a href="login.html" class="btn btn-dark" id="accessSystemBtn" style="padding: 0.875rem 2rem; font-size: 1rem;">
-          Access System
+          Start Designing
         </a>
         <a href="#capabilities" class="btn btn-text" style="margin-left: 1rem;">
           View Capabilities →
@@ -754,8 +760,8 @@
           <span class="stat-label">Scaling & Placement</span>
         </div>
         <div class="stat">
-          <span class="stat-value">Cloud</span>
-          <span class="stat-label">Portfolio Storage</span>
+          <span class="stat-value">Saved</span>
+          <span class="stat-label">Projects & Revisions</span>
         </div>
       </div>
     </div>
@@ -781,52 +787,45 @@
   <section class="features" id="features">
     <div class="container">
       <div class="section-header">
-        <h2>System Architecture</h2>
-        <p>Comprehensive tools designed specifically for in-store furniture consultation workflows, 
-           built on established HCI principles for professional efficiency.</p>
+        <h2>Everything You Need to Design Faster</h2>
+        <p>Practical tools for room planning, visual validation, and quick iteration on desktop or mobile.</p>
       </div>
 
       <div class="features-grid">
         <div class="feature-box">
           <span class="feature-num">01</span>
           <h3>Room Specification</h3>
-          <p>Input exact room dimensions, wall configurations, and existing colour schemes. 
-             System validates measurements and maintains specification library for returning customers.</p>
+          <p>Set exact room dimensions and layouts with snapping controls for accurate space planning.</p>
         </div>
 
         <div class="feature-box">
           <span class="feature-num">02</span>
           <h3>2D Layout Design</h3>
-          <p>Intuitive drag-and-drop interface for furniture placement. Grid-based positioning 
-             ensures accurate scale representation and spatial relationship visualization.</p>
+          <p>Drag and arrange furniture in a clean top-down workspace with instant visual feedback.</p>
         </div>
 
         <div class="feature-box">
           <span class="feature-num">03</span>
           <h3>3D Visualization</h3>
-          <p>Convert layouts to realistic 3D renders with adjustable viewing angles. 
-             Customers experience immersive previews of how selections fit their actual space.</p>
+          <p>Switch to 3D view to inspect proportions, depth, and composition from any angle.</p>
         </div>
 
         <div class="feature-box">
           <span class="feature-num">04</span>
           <h3>Dynamic Scaling</h3>
-          <p>Intelligent proportion adjustments based on room dimensions. Prevents sizing errors 
-             with conflict alerts when furniture exceeds available space.</p>
+          <p>Resize and rotate items confidently with scale-aware placement to avoid layout mistakes.</p>
         </div>
 
         <div class="feature-box">
           <span class="feature-num">05</span>
           <h3>Colour & Shading</h3>
-          <p>Apply finishes to individual pieces or entire schemes. Real-time shading adjustments 
-             demonstrate lighting effects and material textures accurately.</p>
+          <p>Test color palettes quickly and compare material moods in context before finalizing.</p>
         </div>
 
         <div class="feature-box">
           <span class="feature-num">06</span>
-          <h3>Portfolio Management</h3>
-          <p>Secure designer accounts with saved design histories. Edit existing layouts, 
-             create variations, and maintain customer consultation records.</p>
+          <h3>Project Management</h3>
+          <p>Save drafts, continue ongoing concepts, and keep finished designs organized in one place.</p>
         </div>
       </div>
     </div>
@@ -836,11 +835,10 @@
     <div class="container">
       <div class="cap-grid">
         <div>
-          <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Built for Professional Use</h2>
+          <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Built for Everyone</h2>
           <p style="color: var(--text-light); margin-bottom: 3rem; line-height: 1.7;">
-            Every interaction designed around HCI best practices: immediate feedback, 
-            error prevention, and efficient workflows that respect both designer expertise 
-            and customer time constraints.
+            From homeowners to design teams, RoomCraft keeps the workflow intuitive:
+            fast actions, clear feedback, and easy iteration from first draft to final layout.
           </p>
           
           <ul class="cap-list">
@@ -848,8 +846,7 @@
               <div class="cap-icon">⚡</div>
               <div class="cap-content">
                 <h3>Performance Optimized</h3>
-                <p>2D and 3D rendering without noticeable delays. Smooth transitions maintain 
-                   consultation momentum and customer engagement.</p>
+                <p>2D and 3D rendering designed for responsive interactions during active planning.</p>
               </div>
             </li>
             
@@ -857,8 +854,7 @@
               <div class="cap-icon">♿</div>
               <div class="cap-content">
                 <h3>Accessibility Compliant</h3>
-                <p>WCAG 2.1 AA standards with high contrast ratios (4.5:1 minimum), keyboard 
-                   navigation support, and screen reader compatibility.</p>
+                <p>Readable contrast, keyboard-friendly controls, and clear visual hierarchy throughout.</p>
               </div>
             </li>
             
@@ -866,8 +862,7 @@
               <div class="cap-icon">↩️</div>
               <div class="cap-content">
                 <h3>Error Recovery</h3>
-                <p>Undo functionality for recent changes, confirmation dialogs for deletions, 
-                   and auto-save prevents data loss during consultations.</p>
+                <p>Undo actions and guided confirmations help recover quickly from accidental edits.</p>
               </div>
             </li>
             
@@ -875,8 +870,7 @@
               <div class="cap-icon">🎯</div>
               <div class="cap-content">
                 <h3>Intuitive Interface</h3>
-                <p>Consistent navigation patterns and clear visual hierarchies minimize 
-                   training requirements and reduce cognitive load.</p>
+                <p>Simple controls and predictable behavior reduce friction and speed up decision-making.</p>
               </div>
             </li>
           </ul>
@@ -898,7 +892,7 @@
             <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
               Display
             </h4>
-            <p style="font-weight: 500;">Minimum 1280x720 / Recommended 1920x1080</p>
+            <p style="font-weight: 500;">Minimum 1280x720 / Recommended 1920x1080+</p>
           </div>
           
           <div style="margin-bottom: 2rem;">
@@ -912,7 +906,7 @@
             <h4 style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
               Security
             </h4>
-            <p style="font-weight: 500;">SSL encryption, role-based access control</p>
+            <p style="font-weight: 500;">Secure sessions and encrypted API communication</p>
           </div>
         </div>
       </div>
@@ -922,35 +916,34 @@
   <section class="portal" id="portal">
     <div class="container">
       <div class="portal-content">
-        <h2>Designer Portal</h2>
+        <h2>Start with RoomCraft</h2>
         <p>
-          Secure access for authorized retail design staff. Manage customer portfolios, 
-          access historical designs, and utilize the full visualization toolkit for 
-          in-store consultations.
+          Build your account, start a layout, and turn your ideas into clear 2D plans and
+          realistic 3D spaces in minutes.
         </p>
         
         <div class="portal-features">
           <div class="portal-feature">
-            <h4>Authentication</h4>
-            <p>Role-based login credentials provided by system administrator</p>
+            <h4>Quick Signup</h4>
+            <p>Create an account and begin designing right away.</p>
           </div>
           <div class="portal-feature">
-            <h4>Portfolio Access</h4>
-            <p>View, edit, and manage saved customer designs and room specifications</p>
+            <h4>Your Projects</h4>
+            <p>Save drafts, ongoing work, and final concepts in one dashboard.</p>
           </div>
           <div class="portal-feature">
-            <h4>System Status</h4>
-            <p>Real-time monitoring and maintenance notifications</p>
+            <h4>Anytime Access</h4>
+            <p>Open your designs from any supported browser.</p>
           </div>
         </div>
         
         <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
-          <a href="#" class="btn btn-primary" style="padding: 0.875rem 2rem;">System Login</a>
-          <a href="#" class="btn" style="background: rgba(255,255,255,0.1); color: white; padding: 0.875rem 2rem;">Request Account</a>
+          <a href="login.html" class="btn btn-primary" id="portalLoginBtn" style="padding: 0.875rem 2rem;">Open Designer</a>
+          <a href="#features" class="btn" style="background: rgba(255,255,255,0.1); color: white; padding: 0.875rem 2rem;">See Features</a>
         </div>
         
         <p style="margin-top: 2rem; font-size: 0.875rem; color: #666;">
-          Authorized retail personnel only. Contact your system administrator for access credentials.
+          Anyone can use RoomCraft to plan spaces, test layouts, and visualize ideas before execution.
         </p>
       </div>
     </div>
@@ -964,8 +957,8 @@
           <span>RoomCraft</span>
         </a>
         <p>
-          Professional furniture visualization system for retail environments. 
-          Supporting accurate spatial planning and customer decision-making.
+          RoomCraft is a modern room planning platform for anyone who wants to design
+          smarter interiors with confidence.
         </p>
       </div>
       
@@ -1002,8 +995,8 @@
     </div>
     
     <div class="footer-bottom">
-      <span>© 2024 Furniture Retail Solutions. RoomCraft System Version 2.4.1</span>
-      <span>Enterprise License</span>
+      <span>© 2026 RoomCraft. All rights reserved.</span>
+      <span>Web Platform</span>
     </div>
   </footer>
 
@@ -1016,10 +1009,12 @@
       const designerLoginBtn = document.getElementById('designerLoginBtn');
       const mobileDesignerLoginBtn = document.getElementById('mobileDesignerLoginBtn');
       const accessSystemBtn = document.getElementById('accessSystemBtn');
+      const portalLoginBtn = document.getElementById('portalLoginBtn');
 
       if (designerLoginBtn) designerLoginBtn.href = 'login.html';
       if (mobileDesignerLoginBtn) mobileDesignerLoginBtn.href = 'login.html';
       if (accessSystemBtn) accessSystemBtn.href = 'login.html';
+      if (portalLoginBtn) portalLoginBtn.href = 'login.html';
 
       if (window.API && API.isLoggedIn() && designerLoginBtn) {
         designerLoginBtn.textContent = 'Designer Dashboard';
@@ -1029,6 +1024,11 @@
       if (window.API && API.isLoggedIn() && mobileDesignerLoginBtn) {
         mobileDesignerLoginBtn.textContent = 'Designer Dashboard';
         mobileDesignerLoginBtn.href = 'dashboard.html';
+      }
+
+      if (window.API && API.isLoggedIn() && portalLoginBtn) {
+        portalLoginBtn.textContent = 'Go to Dashboard';
+        portalLoginBtn.href = 'dashboard.html';
       }
 
       if (menuBtn && nav) {

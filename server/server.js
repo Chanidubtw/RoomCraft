@@ -14,6 +14,7 @@ app.use(cors({
     'https://roomcraft-434523840513.europe-west1.run.app',
     'http://localhost:8080',
     'http://127.0.0.1:5500',
+    'http://localhost:5500',
   ],
   credentials: true
 }));

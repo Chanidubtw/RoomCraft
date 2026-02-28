@@ -1,5 +1,8 @@
 const API = (() => {
-  const BASE = 'https://roomcraftdb-434523840513.europe-west1.run.app/api';
+  const LOCAL_BASES = ['http://localhost:4000/api', 'http://localhost:8080/api'];
+  const PROD_BASE  = 'https://roomcraftdb-434523840513.europe-west1.run.app/api';
+  const IS_LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const BASES = IS_LOCAL ? LOCAL_BASES : [PROD_BASE];
   const TK_KEY  = 'roomcraft_token';
   const USR_KEY = 'roomcraft_user';
 
@@ -22,12 +25,21 @@ const API = (() => {
     const token = getToken();
     if (token) opts.headers['Authorization'] = 'Bearer ' + token;
     if (body)  opts.body = JSON.stringify(body);
-    let res;
-    try {
-      res = await fetch(BASE + path, opts);
-    } catch (e) {
-      throw new Error('Cannot reach server: ' + e.message);
+    let res, lastError;
+
+    for (const base of BASES) {
+      try {
+        res = await fetch(base + path, opts);
+        break;
+      } catch (e) {
+        lastError = e;
+      }
     }
+
+    if (!res) {
+      throw new Error('Cannot reach server: ' + (lastError ? lastError.message : 'Network error'));
+    }
+
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       if (res.status === 401) { clearSession(); window.location.href = 'login.html'; return; }

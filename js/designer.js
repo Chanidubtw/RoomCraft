@@ -3,23 +3,9 @@
  * Full 2D canvas interaction + Three.js 3D visualization
  */
 
-/* ══════════════════════════════════════
-   FURNITURE LIBRARY DEFINITIONS
-══════════════════════════════════════ */
-const FURNITURE_LIB = [
-  { type:'sofa',         label:'Sofa',          emoji:'🛋️',  w:2.0, h:0.9,  color:'#8B7355', height3d:0.85 },
-  { type:'armchair',     label:'Armchair',       emoji:'🪑',  w:0.8, h:0.8,  color:'#A0785A', height3d:0.85 },
-  { type:'chair',        label:'Dining Chair',   emoji:'🪑',  w:0.5, h:0.5,  color:'#C8A882', height3d:0.90 },
-  { type:'dining_table', label:'Dining Table',   emoji:'🍽️', w:1.8, h:0.9,  color:'#DEB887', height3d:0.75 },
-  { type:'coffee_table', label:'Coffee Table',   emoji:'☕',  w:1.1, h:0.6,  color:'#BC8F5F', height3d:0.45 },
-  { type:'side_table',   label:'Side Table',     emoji:'📦',  w:0.5, h:0.5,  color:'#D2B48C', height3d:0.55 },
-  { type:'bed',          label:'Bed',            emoji:'🛏️', w:2.0, h:1.6,  color:'#4A90D9', height3d:0.55 },
-  { type:'wardrobe',     label:'Wardrobe',       emoji:'🚪',  w:1.8, h:0.6,  color:'#7B5E42', height3d:2.00 },
-  { type:'bookshelf',    label:'Bookshelf',      emoji:'📚',  w:1.2, h:0.3,  color:'#5C4033', height3d:1.80 },
-  { type:'tv_unit',      label:'TV Unit',        emoji:'📺',  w:1.6, h:0.4,  color:'#333333', height3d:0.50 },
-  { type:'desk',         label:'Desk',           emoji:'🖥️', w:1.4, h:0.7,  color:'#B8966E', height3d:0.76 },
-  { type:'plant',        label:'Plant',          emoji:'🌿',  w:0.4, h:0.4,  color:'#5A8A5A', height3d:0.80 },
-];
+const DesignerCatalog = window.DesignerCatalog || { FURNITURE_LIB: [], LIBRARY_GROUPS: [] };
+const FURNITURE_LIB = DesignerCatalog.FURNITURE_LIB;
+const LIBRARY_GROUPS = DesignerCatalog.LIBRARY_GROUPS;
 
 /* ══════════════════════════════════════
    CONSTANTS
@@ -55,6 +41,51 @@ let resizeState = null;
 let isRotating  = false;
 
 let scene3d = null, renderer3d = null, animId = null;
+let threeDepsPromise = null;
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-src="${src}"]`);
+    if (existing) {
+      if (existing.dataset.loaded === '1') return resolve();
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.dataset.src = src;
+    s.addEventListener('load', () => { s.dataset.loaded = '1'; resolve(); }, { once: true });
+    s.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+    document.head.appendChild(s);
+  });
+}
+
+async function ensure3DDependencies() {
+  if (threeDepsPromise) return threeDepsPromise;
+  threeDepsPromise = (async () => {
+    if (!window.THREE) {
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+    }
+    if (!window.THREE || !window.THREE.OrbitControls) {
+      await loadScriptOnce('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js');
+    }
+    if (!window.THREE || !window.THREE.GLTFLoader) {
+      await loadScriptOnce('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');
+    }
+    if (!window.THREE || !window.THREE.MTLLoader) {
+      await loadScriptOnce('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js');
+    }
+    if (!window.THREE || !window.THREE.OBJLoader) {
+      await loadScriptOnce('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js');
+    }
+  })().catch(err => {
+    threeDepsPromise = null;
+    throw err;
+  });
+  return threeDepsPromise;
+}
 
 /* ══════════════════════════════════════
    INIT
@@ -177,19 +208,16 @@ function setupUI(session) {
 function setupFurnitureLibrary() {
   const sidebar = $id('furnitureSidebar');
   if (!sidebar) return;
-  FURNITURE_LIB.forEach(def => {
-    const el = document.createElement('div');
-    el.className = 'furniture-item';
-    el.title = `Click to add ${def.label} (${def.w}m × ${def.h}m)`;
-    el.innerHTML = `
-      <span class="fi-icon">${def.emoji}</span>
-      <div class="fi-info">
-        <span class="fi-label">${def.label}</span>
-        <span class="fi-size">${def.w}×${def.h}m</span>
-      </div>`;
-    el.addEventListener('click', () => addFurniture(def));
-    sidebar.appendChild(el);
-  });
+  if (window.DesignerLibraryUI && typeof window.DesignerLibraryUI.renderLibrary === 'function') {
+    window.DesignerLibraryUI.renderLibrary({
+      sidebarEl: sidebar,
+      groups: LIBRARY_GROUPS,
+      library: FURNITURE_LIB,
+      onAdd: addFurniture
+    });
+    return;
+  }
+  console.warn('DesignerLibraryUI module not loaded. Furniture sidebar is unavailable.');
 }
 
 function addFurniture(def) {
@@ -602,11 +630,21 @@ function drawShape2D(item, hw, hh) {
     case 'coffee_table': draw2D_coffeeTable(hw, hh, c);  break;
     case 'side_table':   draw2D_sideTable(hw, hh, c);    break;
     case 'bed':          draw2D_bed(hw, hh, c);          break;
+    case 'bed_platform': draw2D_bed_platform(hw, hh, c); break;
+    case 'bed_upholstered': draw2D_bed_upholstered(hw, hh, c); break;
+    case 'bed_canopy':   draw2D_bed_canopy(hw, hh, c);   break;
+    case 'bed_bunk':     draw2D_bed_bunk(hw, hh, c);     break;
+    case 'bed_daybed':   draw2D_bed_daybed(hw, hh, c);   break;
     case 'wardrobe':     draw2D_wardrobe(hw, hh, c);     break;
     case 'bookshelf':    draw2D_bookshelf(hw, hh, c);    break;
     case 'tv_unit':      draw2D_tvUnit(hw, hh, c);       break;
     case 'desk':         draw2D_desk(hw, hh, c);         break;
     case 'plant':        draw2D_plant(hw, hh, c);        break;
+    case 'refrigerator': draw2D_refrigerator(hw, hh, c); break;
+    case 'kitchen_counter': draw2D_kitchenCounter(hw, hh, c); break;
+    case 'washing_machine': draw2D_washingMachine(hw, hh, c); break;
+    case 'floor_lamp':   draw2D_floorLamp(hw, hh, c);    break;
+    case 'rug':          draw2D_rug(hw, hh, c);          break;
     default:             draw2D_generic(hw, hh, c);      break;
   }
 }
@@ -770,6 +808,88 @@ function draw2D_bed(hw, hh, c) {
   ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 6); ctx.stroke();
 }
 
+function draw2D_bed_platform(hw, hh, c) {
+  // Low profile frame
+  ctx.fillStyle = hexDarken(c, 0.1);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 5); ctx.fill();
+  // Mattress
+  ctx.fillStyle = '#E6DED2';
+  ctx.beginPath(); roundRect(ctx, -hw*0.92, -hh*0.88, hw*1.84, hh*1.72, 4); ctx.fill();
+  // Headboard
+  ctx.fillStyle = hexDarken(c, 0.24);
+  ctx.fillRect(-hw, -hh, hw*2, hh*0.18);
+  // Pillows
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath(); roundRect(ctx, -hw*0.52, -hh*0.72, hw*0.44, hh*0.24, 3); ctx.fill();
+  ctx.beginPath(); roundRect(ctx,  hw*0.08, -hh*0.72, hw*0.44, hh*0.24, 3); ctx.fill();
+  // Platform shadow line
+  ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-hw*0.92, hh*0.8); ctx.lineTo(hw*0.92, hh*0.8); ctx.stroke();
+}
+
+function draw2D_bed_upholstered(hw, hh, c) {
+  draw2D_bed(hw, hh, c);
+  // Soft tufted headboard cue
+  ctx.fillStyle = hexLighten(c, 0.2);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*0.26, 8); ctx.fill();
+  ctx.strokeStyle = hexDarken(c, 0.22);
+  ctx.lineWidth = 1;
+  for (let x = -2; x <= 2; x++) {
+    const px = x * hw * 0.36;
+    ctx.beginPath(); ctx.arc(px, -hh + hh*0.13, 1.8, 0, Math.PI*2); ctx.fillStyle = hexDarken(c,0.28); ctx.fill();
+  }
+}
+
+function draw2D_bed_canopy(hw, hh, c) {
+  draw2D_bed(hw, hh, c);
+  // Corner posts and top rail hint
+  ctx.strokeStyle = hexDarken(c, 0.38);
+  ctx.lineWidth = 2;
+  [[-hw*0.94,-hh*0.94],[hw*0.94,-hh*0.94],[-hw*0.94,hh*0.94],[hw*0.94,hh*0.94]].forEach(([x,y]) => {
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y*0.35); ctx.stroke();
+  });
+  ctx.beginPath();
+  ctx.moveTo(-hw*0.94, -hh*0.94);
+  ctx.lineTo(hw*0.94, -hh*0.94);
+  ctx.stroke();
+}
+
+function draw2D_bed_bunk(hw, hh, c) {
+  // Two stacked mattresses from top view (split left/right)
+  ctx.fillStyle = hexDarken(c, 0.18);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.fill();
+  // Upper / lower bunks hints
+  ctx.fillStyle = '#E5DDD0';
+  ctx.beginPath(); roundRect(ctx, -hw*0.95, -hh*0.9, hw*1.9, hh*0.75, 3); ctx.fill();
+  ctx.beginPath(); roundRect(ctx, -hw*0.95, hh*0.15, hw*1.9, hh*0.75, 3); ctx.fill();
+  // Ladder rungs
+  ctx.strokeStyle = hexDarken(c, 0.35);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(hw*0.75, -hh*0.12); ctx.lineTo(hw*0.75, hh*0.9); ctx.stroke();
+  [-0.05,0.25,0.55].forEach(r => {
+    const y = -hh + (hh*2)*r;
+    ctx.beginPath(); ctx.moveTo(hw*0.62, y); ctx.lineTo(hw*0.88, y); ctx.stroke();
+  });
+}
+
+function draw2D_bed_daybed(hw, hh, c) {
+  // Sofa-bed style
+  ctx.fillStyle = c;
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 5); ctx.fill();
+  // Back and side arms
+  ctx.fillStyle = hexDarken(c, 0.22);
+  ctx.fillRect(-hw, -hh, hw*2, hh*0.2);
+  ctx.fillRect(-hw, -hh, hw*0.12, hh*2);
+  ctx.fillRect(hw*0.88, -hh, hw*0.12, hh*2);
+  // Mattress and cushions
+  ctx.fillStyle = '#E7DFD2';
+  ctx.beginPath(); roundRect(ctx, -hw*0.82, -hh*0.28, hw*1.64, hh*1.08, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.68)';
+  ctx.beginPath(); roundRect(ctx, -hw*0.56, -hh*0.7, hw*0.48, hh*0.24, 3); ctx.fill();
+  ctx.beginPath(); roundRect(ctx, hw*0.08, -hh*0.7, hw*0.48, hh*0.24, 3); ctx.fill();
+}
+
 function draw2D_wardrobe(hw, hh, c) {
   ctx.fillStyle = c;
   ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 3); ctx.fill();
@@ -890,6 +1010,100 @@ function draw2D_plant(hw, hh, c) {
   // Centre bud
   ctx.fillStyle = hexDarken(leafC, 0.1);
   ctx.beginPath(); ctx.arc(0, -r*0.18, r*0.16, 0, Math.PI*2); ctx.fill();
+}
+
+function draw2D_refrigerator(hw, hh, c) {
+  ctx.fillStyle = hexLighten(c, 0.1);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.fill();
+  ctx.strokeStyle = hexDarken(c, 0.28);
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.stroke();
+  // Freezer separator
+  ctx.strokeStyle = hexDarken(c, 0.22);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(-hw+3, -hh + hh*0.55); ctx.lineTo(hw-3, -hh + hh*0.55); ctx.stroke();
+  // Handles
+  ctx.fillStyle = '#8C949D';
+  ctx.fillRect(hw*0.55, -hh*0.74, 3, hh*0.33);
+  ctx.fillRect(hw*0.55, -hh*0.05, 3, hh*0.6);
+}
+
+function draw2D_kitchenCounter(hw, hh, c) {
+  ctx.fillStyle = c;
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.fill();
+  // Counter top band
+  ctx.fillStyle = hexDarken(c, 0.26);
+  ctx.fillRect(-hw, -hh, hw*2, hh*0.22);
+  // Sink basin
+  ctx.fillStyle = '#D0D6DE';
+  ctx.beginPath(); roundRect(ctx, -hw*0.62, -hh*0.36, hw*0.52, hh*0.46, 3); ctx.fill();
+  ctx.strokeStyle = '#9AA4B1';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); roundRect(ctx, -hw*0.62, -hh*0.36, hw*0.52, hh*0.46, 3); ctx.stroke();
+  // Hob circles
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+  ctx.lineWidth = 1.1;
+  [-0.1, 0.18].forEach(off => {
+    ctx.beginPath(); ctx.arc(hw*off, -hh*0.13, hh*0.12, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(hw*off + hh*0.24, -hh*0.13, hh*0.12, 0, Math.PI*2); ctx.stroke();
+  });
+}
+
+function draw2D_washingMachine(hw, hh, c) {
+  ctx.fillStyle = hexLighten(c, 0.08);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.fill();
+  ctx.strokeStyle = hexDarken(c, 0.3);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 4); ctx.stroke();
+  // Drum
+  const r = Math.min(hw, hh) * 0.46;
+  ctx.fillStyle = '#AFC3D9';
+  ctx.beginPath(); ctx.arc(0, hh*0.08, r, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#6F879F';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, hh*0.08, r, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.beginPath(); ctx.arc(-r*0.26, hh*0.08-r*0.22, r*0.32, 0, Math.PI*2); ctx.fill();
+  // Control bar
+  ctx.fillStyle = '#939EAA';
+  ctx.fillRect(-hw*0.68, -hh*0.78, hw*1.36, hh*0.2);
+}
+
+function draw2D_floorLamp(hw, hh, c) {
+  const r = Math.min(hw, hh);
+  // Base
+  ctx.fillStyle = '#6D5A45';
+  ctx.beginPath(); ctx.ellipse(0, r*0.55, r*0.42, r*0.24, 0, 0, Math.PI*2); ctx.fill();
+  // Pole
+  ctx.fillStyle = '#9D8A70';
+  ctx.fillRect(-2, -r*0.48, 4, r*1.05);
+  // Shade
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.moveTo(-r*0.42, -r*0.28);
+  ctx.lineTo(r*0.42, -r*0.28);
+  ctx.lineTo(r*0.25, r*0.02);
+  ctx.lineTo(-r*0.25, r*0.02);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = hexDarken(c, 0.24);
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+}
+
+function draw2D_rug(hw, hh, c) {
+  ctx.fillStyle = hexLighten(c, 0.06);
+  ctx.beginPath(); roundRect(ctx, -hw, -hh, hw*2, hh*2, 6); ctx.fill();
+  ctx.strokeStyle = hexDarken(c, 0.25);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); roundRect(ctx, -hw+3, -hh+3, hw*2-6, hh*2-6, 4); ctx.stroke();
+  // Pattern lines
+  ctx.strokeStyle = hexLighten(c, 0.25);
+  ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    const y = i * hh * 0.3;
+    ctx.beginPath(); ctx.moveTo(-hw+6, y); ctx.lineTo(hw-6, y); ctx.stroke();
+  }
 }
 
 function draw2D_generic(hw, hh, c) {
@@ -1123,7 +1337,21 @@ function switchView(mode) {
 /* ══════════════════════════════════════
    3D VISUALIZATION — Three.js
 ══════════════════════════════════════ */
-function show3D() {
+async function show3D() {
+  showToast('Some elements may take a moment to display.', 4000);
+  try {
+    await ensure3DDependencies();
+  } catch (err) {
+    showToast('3D viewer failed to load. Check your connection and try again.');
+    return;
+  }
+
+  const THREE = window.THREE;
+  if (!THREE) {
+    showToast('3D engine is unavailable.');
+    return;
+  }
+
   const modal = $id('modal3d');
   if (!modal) return;
   modal.classList.remove('hidden');
@@ -1216,220 +1444,30 @@ function show3D() {
   ceil.position.set(rw / 2, wallH, rh / 2);
   scene.add(ceil);
 
-  // ── Furniture — compound 3D shapes ──
-  state.furniture.forEach(item => build3DFurniture(item, scene));
-
-  /* ── 3D Shape Helpers ── */
-  function mat3d(hexColor, shade, lighten) {
-    shade   = shade   || 0;
-    lighten = lighten || 0;
-    const n = parseInt((hexColor||'#888').replace('#',''), 16);
-    let r = ((n>>16)&0xff)/255, g = ((n>>8)&0xff)/255, b = (n&0xff)/255;
-    r = Math.min(1, r + (1-r)*lighten);
-    g = Math.min(1, g + (1-g)*lighten);
-    b = Math.min(1, b + (1-b)*lighten);
-    r *= (1 - shade*0.6); g *= (1 - shade*0.6); b *= (1 - shade*0.6);
-    const mat = new THREE.MeshLambertMaterial();
-    mat.color.setRGB(Math.max(0,r), Math.max(0,g), Math.max(0,b));
-    return mat;
-  }
-  function box(w, h, d, col, shade, lit) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat3d(col,shade,lit));
-    m.castShadow = m.receiveShadow = true; return m;
-  }
-  function cyl(rt, rb, h, seg, col, shade, lit) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||8), mat3d(col,shade,lit));
-    m.castShadow = m.receiveShadow = true; return m;
-  }
-  function sph(r, seg, col, shade, lit) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r,seg||10,8), mat3d(col,shade,lit));
-    m.castShadow = m.receiveShadow = true; return m;
-  }
-  function pos(mesh, x, y, z) { mesh.position.set(x,y,z); return mesh; }
-
-  function build3DFurniture(item, sc) {
-    const g = new THREE.Group();
-    const w = item.w, d = item.h, s = item.shading||0, c = item.color;
-    switch (item.type) {
-      case 'sofa':         buildSofa(g,w,d,c,s); break;
-      case 'armchair':     buildArmchair(g,w,d,c,s); break;
-      case 'chair':        buildChair(g,w,d,c,s); break;
-      case 'dining_table': buildDiningTable(g,w,d,c,s); break;
-      case 'coffee_table': buildCoffeeTable(g,w,d,c,s); break;
-      case 'side_table':   buildSideTable(g,w,d,c,s); break;
-      case 'bed':          buildBed(g,w,d,c,s); break;
-      case 'wardrobe':     buildWardrobe(g,w,d,c,s); break;
-      case 'bookshelf':    buildBookshelf(g,w,d,c,s); break;
-      case 'tv_unit':      buildTVUnit(g,w,d,c,s); break;
-      case 'desk':         buildDesk(g,w,d,c,s); break;
-      case 'plant':        buildPlant(g,w,d,c,s); break;
-      default: g.add(pos(box(w,0.75,d,c,s,0), 0,0.375,0)); break;
+  // ── Furniture — delegated to procedural module (GLB integration will hook here) ──
+  const glb3D = window.DesignerThreeGLB;
+  const procedural3D = window.DesignerThreeProcedural;
+  for (const item of state.furniture) {
+    let group = null;
+    if (glb3D && typeof glb3D.createFurnitureGroup === "function") {
+      group = await glb3D.createFurnitureGroup(THREE, item);
     }
-    g.position.set(item.x+w/2, 0, item.y+d/2);
-    g.rotation.y = -(item.rotation||0)*Math.PI/180;
-    sc.add(g);
-  }
-
-  function buildSofa(g,w,d,c,s) {
-    g.add(pos(box(w*0.9,0.12,d*0.9,c,s,-0.12), 0,0.06,0));       // base
-    g.add(pos(box(w*0.36,0.2,d*0.55,c,s,0.06), -w*0.2,0.28,d*0.1)); // seat L
-    g.add(pos(box(w*0.36,0.2,d*0.55,c,s,0.06),  w*0.2,0.28,d*0.1)); // seat R
-    g.add(pos(box(w*0.88,0.48,d*0.14,c,s,-0.08), 0,0.52,-d*0.38)); // backrest
-    g.add(pos(box(w*0.36,0.36,d*0.12,c,s,0.1), -w*0.2,0.55,-d*0.3)); // back cushion L
-    g.add(pos(box(w*0.36,0.36,d*0.12,c,s,0.1),  w*0.2,0.55,-d*0.3)); // back cushion R
-    g.add(pos(box(w*0.1,0.52,d*0.9,c,s,-0.06), -w*0.44,0.32,0));  // arm L
-    g.add(pos(box(w*0.1,0.52,d*0.9,c,s,-0.06),  w*0.44,0.32,0));  // arm R
-    // Short legs
-    const legC = '#5C4033';
-    [[-w*0.38,d*0.38],[w*0.38,d*0.38],[-w*0.38,-d*0.38],[w*0.38,-d*0.38]].forEach(([lx,lz]) => {
-      g.add(pos(box(0.06,0.08,0.06,legC,s,0), lx,0.04,lz));
-    });
-  }
-
-  function buildArmchair(g,w,d,c,s) {
-    g.add(pos(box(w*0.88,0.1,d*0.88,c,s,-0.12), 0,0.05,0));
-    g.add(pos(box(w*0.7,0.2,d*0.56,c,s,0.08), 0,0.25,d*0.1));
-    g.add(pos(box(w*0.7,0.46,d*0.13,c,s,-0.08), 0,0.47,-d*0.36));
-    g.add(pos(box(w*0.7,0.34,d*0.12,c,s,0.1), 0,0.55,-d*0.29));
-    g.add(pos(box(w*0.12,0.4,d*0.88,c,s,-0.06), -w*0.42,0.3,0));
-    g.add(pos(box(w*0.12,0.4,d*0.88,c,s,-0.06),  w*0.42,0.3,0));
-    const legC = '#5C4033';
-    [[-w*0.34,d*0.34],[w*0.34,d*0.34],[-w*0.34,-d*0.34],[w*0.34,-d*0.34]].forEach(([lx,lz]) => {
-      g.add(pos(box(0.05,0.08,0.05,legC,s,0), lx,0.04,lz));
-    });
-  }
-
-  function buildChair(g,w,d,c,s) {
-    // Seat
-    g.add(pos(box(w*0.85,0.06,d*0.85,c,s,0.05), 0,0.46,0));
-    // Backrest (2 horizontal rails)
-    g.add(pos(box(w*0.82,0.06,0.05,c,s,-0.05), 0,0.78,-d*0.41));
-    g.add(pos(box(w*0.82,0.06,0.05,c,s,-0.05), 0,0.95,-d*0.41));
-    // Back posts
-    g.add(pos(box(0.04,0.55,0.04,c,s,-0.15), -w*0.36,0.72,-d*0.41));
-    g.add(pos(box(0.04,0.55,0.04,c,s,-0.15),  w*0.36,0.72,-d*0.41));
-    // 4 legs
-    const legH=0.44, lr=0.025;
-    [[-w*0.36,d*0.36],[w*0.36,d*0.36],[-w*0.36,-d*0.41],[w*0.36,-d*0.41]].forEach(([lx,lz]) => {
-      g.add(pos(cyl(lr,lr,legH,6,c,s,-0.2), lx,legH/2,lz));
-    });
-  }
-
-  function buildDiningTable(g,w,d,c,s) {
-    g.add(pos(box(w,0.05,d,c,s,0.18), 0,0.76,0)); // tabletop
-    // 4 tapered legs
-    [[-w*0.42,d*0.38],[w*0.42,d*0.38],[-w*0.42,-d*0.38],[w*0.42,-d*0.38]].forEach(([lx,lz]) => {
-      g.add(pos(cyl(0.035,0.045,0.72,8,c,s,-0.1), lx,0.36,lz));
-    });
-  }
-
-  function buildCoffeeTable(g,w,d,c,s) {
-    g.add(pos(box(w,0.05,d,c,s,0.18), 0,0.44,0));           // top
-    g.add(pos(box(w*0.7,0.04,d*0.7,c,s,-0.05), 0,0.2,0));  // lower shelf
-    const legH=0.38, ls=0.04;
-    [[-w*0.42,d*0.36],[w*0.42,d*0.36],[-w*0.42,-d*0.36],[w*0.42,-d*0.36]].forEach(([lx,lz]) => {
-      g.add(pos(box(ls,legH,ls,c,s,-0.18), lx,legH/2,lz));
-    });
-  }
-
-  function buildSideTable(g,w,d,c,s) {
-    const r = Math.min(w,d)*0.42;
-    g.add(pos(cyl(r,r,0.05,16,c,s,0.2),  0,0.55,0));   // top disc
-    g.add(pos(cyl(0.04,0.04,0.5,8,c,s,-0.1), 0,0.25,0));// stem
-    g.add(pos(cyl(r*0.55,r*0.55,0.04,16,c,s,-0.05), 0,0.02,0)); // base
-  }
-
-  function buildBed(g,w,d,c,s) {
-    g.add(pos(box(w,0.18,d,'#7B5E42',s,-0.08), 0,0.09,0));        // frame
-    g.add(pos(box(w*0.92,0.22,d*0.82,'#E0D8CC',s*0.3,0.12), 0,0.31,d*0.04)); // mattress
-    g.add(pos(box(w,0.62,0.1,'#7B5E42',s,-0.04), 0,0.4,-d*0.46)); // headboard
-    g.add(pos(box(w,0.28,0.08,'#7B5E42',s,-0.08), 0,0.27,d*0.46)); // footboard
-    // Pillows
-    g.add(pos(box(w*0.34,0.1,d*0.19,'#F5F0EB',s*0.2,0.2), -w*0.22,0.47,-d*0.24));
-    g.add(pos(box(w*0.34,0.1,d*0.19,'#F5F0EB',s*0.2,0.2),  w*0.22,0.47,-d*0.24));
-    // Blanket
-    g.add(pos(box(w*0.9,0.07,d*0.52,c,s,0.08), 0,0.46,d*0.14));
-  }
-
-  function buildWardrobe(g,w,d,c,s) {
-    g.add(pos(box(w,2.0,d,c,s,0), 0,1.0,0));                       // body
-    g.add(pos(box(w*1.02,0.05,d*1.02,c,s,-0.12), 0,2.03,0));      // top cap
-    // Door divider on front face
-    g.add(pos(box(0.03,1.96,0.02,'#2A1F14',s,0), 0,1.0,d*0.5+0.01));
-    // Handles
-    g.add(pos(box(0.03,0.14,0.04,'#C0A882',0,0.2), -w*0.24,1.0,d*0.5+0.06));
-    g.add(pos(box(0.03,0.14,0.04,'#C0A882',0,0.2),  w*0.24,1.0,d*0.5+0.06));
-    // Feet
-    [[-w*0.42],[w*0.42]].forEach(([lx]) => {
-      g.add(pos(box(0.08,0.06,d*0.8,'#2A1F14',s,0), lx,0.03,0));
-    });
-  }
-
-  function buildBookshelf(g,w,d,c,s) {
-    g.add(pos(box(w,1.8,d,c,s,0), 0,0.9,0));   // carcass
-    // Shelves
-    [0.45, 0.85, 1.25, 1.62].forEach(sy => {
-      g.add(pos(box(w*0.94,0.03,d*0.88,c,s,0.08), 0,sy,0));
-    });
-    // Books on each shelf
-    const bkCols=['#C0392B','#2980B9','#27AE60','#F39C12','#8E44AD','#E67E22','#1ABC9C','#E74C3C'];
-    [0.25,0.65,1.05,1.44].forEach(sy => {
-      let bx=-w*0.44;
-      bkCols.forEach((bc,i)=>{
-        const bw=w*0.07+i*0.01; const bh=0.26+i*0.02;
-        if(bx+bw>w*0.44) return;
-        const bk=box(bw*0.85,bh,d*0.72,bc,0,0);
-        bk.position.set(bx+bw/2, sy+bh/2, 0); g.add(bk);
-        bx+=bw+0.01;
-      });
-    });
-  }
-
-  function buildTVUnit(g,w,d,c,s) {
-    g.add(pos(box(w,0.5,d,c,s,0), 0,0.25,0));  // unit body
-    // Short feet
-    [[-w*0.4],[w*0.4]].forEach(([lx]) => {
-      g.add(pos(box(0.07,0.1,d*0.5,c,s,-0.2), lx,-0.05,0));
-    });
-    // TV screen
-    g.add(pos(box(w*0.88,0.62,0.06,'#111111',0,0), 0,0.81,0));
-    g.add(pos(box(w*0.82,0.54,0.03,'#1a1a2e',0,0.04), 0,0.81,0.04));
-    // Stand
-    g.add(pos(box(0.06,0.18,0.06,'#333333',0,0), 0,0.59,0));
-    g.add(pos(box(0.24,0.03,0.14,'#333333',0,0), 0,0.51,0));
-  }
-
-  function buildDesk(g,w,d,c,s) {
-    g.add(pos(box(w,0.05,d,c,s,0.1), 0,0.76,0));  // desktop
-    // 4 legs
-    const legH=0.73;
-    [[-w*0.45,d*0.42],[w*0.45,d*0.42],[-w*0.45,-d*0.42],[w*0.45,-d*0.42]].forEach(([lx,lz]) => {
-      g.add(pos(box(0.04,legH,0.04,c,s,-0.18), lx,legH/2,lz));
-    });
-    // Monitor
-    g.add(pos(box(w*0.44,0.36,0.05,'#1a1a2e',0,0.02), 0,0.97,-d*0.35));
-    g.add(pos(box(0.04,0.18,0.04,'#333',0,0), 0,0.87,-d*0.35));
-    g.add(pos(box(0.18,0.025,0.12,'#333',0,0), 0,0.785,-d*0.35));
-    // Keyboard
-    g.add(pos(box(w*0.38,0.02,d*0.2,'#AAAAAA',0,0.05), 0,0.79,d*0.05));
-  }
-
-  function buildPlant(g,w,d,c,s) {
-    const potR = Math.min(w,d)*0.3;
-    g.add(pos(cyl(potR*0.75,potR,0.28,14,'#C1440E',s,-0.05), 0,0.14,0)); // pot
-    g.add(pos(cyl(potR*0.74,potR*0.74,0.03,14,'#3D2B1F',s*0.3,0), 0,0.295,0)); // soil
-    const leafC = c||'#5A8A5A';
-    const lh = Math.min(w,d)*0.52;
-    // Main centre leaves
-    const mainSph = sph(lh,12,leafC,s*0.5,0);
-    mainSph.position.set(0,0.3+lh,0); mainSph.scale.set(1,1.15,1); g.add(mainSph);
-    // Side leaves
-    [[lh*0.62,0],[-lh*0.62,0],[0,lh*0.62],[0,-lh*0.62]].forEach(([lx,lz]) => {
-      const sl=sph(lh*0.62,10,leafC,s*0.5,-0.08);
-      sl.position.set(lx,0.3+lh*0.72,lz); g.add(sl);
-    });
-    // Stem
-    g.add(pos(cyl(0.02,0.02,lh*0.85,6,'#5C4033',s,0), 0,0.3+lh*0.42,0));
+    if (procedural3D && typeof procedural3D.buildFurnitureGroup === "function") {
+      group = group || procedural3D.buildFurnitureGroup(THREE, item);
+    }
+    if (!group) {
+      group = new THREE.Group();
+      const fallback = new THREE.Mesh(
+        new THREE.BoxGeometry(item.w, 0.75, item.h),
+        new THREE.MeshLambertMaterial({ color: parseInt((item.color || "#888888").replace("#", ""), 16) })
+      );
+      fallback.castShadow = fallback.receiveShadow = true;
+      fallback.position.set(0, 0.375, 0);
+      group.add(fallback);
+    }
+    group.position.set(item.x + item.w / 2, 0, item.y + item.h / 2);
+    group.rotation.y = -(item.rotation || 0) * Math.PI / 180;
+    scene.add(group);
   }
 
   // ── Orbit Controls ──
@@ -1475,10 +1513,10 @@ function hexToThree(hex) {
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
-function showToast(msg) {
+function showToast(msg, durationMs = 2500) {
   const t = $id('toast');
   if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), durationMs);
 }
