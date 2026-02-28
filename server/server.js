@@ -10,11 +10,7 @@ const app  = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
-  origin: [
-    'https://roomcraft-434523840513.europe-west1.run.app',
-    'http://localhost:8080',
-    'http://127.0.0.1:5500',
-  ],
+  origin: true,
   credentials: true
 }));
 

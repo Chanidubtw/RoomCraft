@@ -26,7 +26,7 @@ const API = (() => {
     try {
       res = await fetch(BASE + path, opts);
     } catch (e) {
-      throw new Error('Cannot reach server. Please try again later.');
+      throw new Error('Cannot reach server: ' + e.message);
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
